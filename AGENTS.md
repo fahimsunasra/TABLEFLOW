@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Architecture
+- Multi-tenant: every business table carries `restaurant_id`; RLS uses security-definer `is_member` / `has_staff_role` so each restaurant sees only its rows.
+- Guests (no login) never write orders directly: they call the `place_guest_order` RPC, which prices items server-side.
+- Restaurant creation goes through the `create_restaurant` RPC so the creator always becomes owner atomically.
+- `/app/*` is a client-only gate (`ssr: false`); role-to-area rules live in `src/lib/tenant.ts` (`AREA_ROLES`) and are tested in `src/test/roles.test.ts`.
+- Kitchen Display is the only dark-mode surface: it wraps its tree in `.dark`.

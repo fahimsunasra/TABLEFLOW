@@ -10,33 +10,157 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppFohRouteImport } from './routes/app.foh'
+import { Route as AppKdsRouteImport } from './routes/app.kds'
+import { Route as AppOwnerRouteImport } from './routes/app.owner'
+import { Route as GuestRestaurantSlugRouteImport } from './routes/guest.$restaurantSlug'
+import { Route as AppOwnerIndexRouteImport } from './routes/app.owner.index'
+import { Route as AppOwnerSectionRouteImport } from './routes/app.owner.$section'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFohRoute = AppFohRouteImport.update({
+  id: '/foh',
+  path: '/foh',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKdsRoute = AppKdsRouteImport.update({
+  id: '/kds',
+  path: '/kds',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOwnerRoute = AppOwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
+  getParentRoute: () => AppRoute,
+} as any)
+const GuestRestaurantSlugRoute = GuestRestaurantSlugRouteImport.update({
+  id: '/guest/$restaurantSlug',
+  path: '/guest/$restaurantSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppOwnerIndexRoute = AppOwnerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOwnerRoute,
+} as any)
+const AppOwnerSectionRoute = AppOwnerSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => AppOwnerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
+  '/app/foh': typeof AppFohRoute
+  '/app/kds': typeof AppKdsRoute
+  '/app/owner': typeof AppOwnerRouteWithChildren
+  '/guest/$restaurantSlug': typeof GuestRestaurantSlugRoute
+  '/app/': typeof AppIndexRoute
+  '/app/owner/$section': typeof AppOwnerSectionRoute
+  '/app/owner/': typeof AppOwnerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
+  '/app/foh': typeof AppFohRoute
+  '/app/kds': typeof AppKdsRoute
+  '/guest/$restaurantSlug': typeof GuestRestaurantSlugRoute
+  '/app': typeof AppIndexRoute
+  '/app/owner/$section': typeof AppOwnerSectionRoute
+  '/app/owner': typeof AppOwnerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
+  '/app/foh': typeof AppFohRoute
+  '/app/kds': typeof AppKdsRoute
+  '/app/owner': typeof AppOwnerRouteWithChildren
+  '/guest/$restaurantSlug': typeof GuestRestaurantSlugRoute
+  '/app/': typeof AppIndexRoute
+  '/app/owner/$section': typeof AppOwnerSectionRoute
+  '/app/owner/': typeof AppOwnerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/app/foh'
+    | '/app/kds'
+    | '/app/owner'
+    | '/guest/$restaurantSlug'
+    | '/app/'
+    | '/app/owner/$section'
+    | '/app/owner/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/app/foh'
+    | '/app/kds'
+    | '/guest/$restaurantSlug'
+    | '/app'
+    | '/app/owner/$section'
+    | '/app/owner'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/app/foh'
+    | '/app/kds'
+    | '/app/owner'
+    | '/guest/$restaurantSlug'
+    | '/app/'
+    | '/app/owner/$section'
+    | '/app/owner/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  OnboardingRoute: typeof OnboardingRoute
+  GuestRestaurantSlugRoute: typeof GuestRestaurantSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +172,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/foh': {
+      id: '/app/foh'
+      path: '/foh'
+      fullPath: '/app/foh'
+      preLoaderRoute: typeof AppFohRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/kds': {
+      id: '/app/kds'
+      path: '/kds'
+      fullPath: '/app/kds'
+      preLoaderRoute: typeof AppKdsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/owner': {
+      id: '/app/owner'
+      path: '/owner'
+      fullPath: '/app/owner'
+      preLoaderRoute: typeof AppOwnerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/guest/$restaurantSlug': {
+      id: '/guest/$restaurantSlug'
+      path: '/guest/$restaurantSlug'
+      fullPath: '/guest/$restaurantSlug'
+      preLoaderRoute: typeof GuestRestaurantSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/owner/': {
+      id: '/app/owner/'
+      path: '/'
+      fullPath: '/app/owner/'
+      preLoaderRoute: typeof AppOwnerIndexRouteImport
+      parentRoute: typeof AppOwnerRoute
+    }
+    '/app/owner/$section': {
+      id: '/app/owner/$section'
+      path: '/$section'
+      fullPath: '/app/owner/$section'
+      preLoaderRoute: typeof AppOwnerSectionRouteImport
+      parentRoute: typeof AppOwnerRoute
+    }
   }
 }
 
+interface AppOwnerRouteChildren {
+  AppOwnerSectionRoute: typeof AppOwnerSectionRoute
+  AppOwnerIndexRoute: typeof AppOwnerIndexRoute
+}
+
+const AppOwnerRouteChildren: AppOwnerRouteChildren = {
+  AppOwnerSectionRoute: AppOwnerSectionRoute,
+  AppOwnerIndexRoute: AppOwnerIndexRoute,
+}
+
+const AppOwnerRouteWithChildren = AppOwnerRoute._addFileChildren(
+  AppOwnerRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppFohRoute: typeof AppFohRoute
+  AppKdsRoute: typeof AppKdsRoute
+  AppOwnerRoute: typeof AppOwnerRouteWithChildren
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppFohRoute: AppFohRoute,
+  AppKdsRoute: AppKdsRoute,
+  AppOwnerRoute: AppOwnerRouteWithChildren,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
+  OnboardingRoute: OnboardingRoute,
+  GuestRestaurantSlugRoute: GuestRestaurantSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
