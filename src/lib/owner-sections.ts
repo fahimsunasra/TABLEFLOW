@@ -1,6 +1,6 @@
 import {
   BarChart3, Bell, CalendarDays, ChefHat, Contact, Crown, Gift, LayoutDashboard, LayoutGrid, Megaphone, Plug,
-  QrCode, Receipt, Settings, TabletSmartphone, Users, UtensilsCrossed, Wallet,
+  QrCode, Receipt, Settings, TabletSmartphone, Users, UtensilsCrossed, Wallet, Grid2x2,
 } from "lucide-react";
 
 /** Generic sections rendered by /app/owner/$section. */
@@ -25,6 +25,8 @@ export type NavItem =
   | { kind: "route"; label: string; icon: Icon; to: "/app/owner/overview" | "/app/owner/reservations" | "/app/owner/floor" | "/app/kds" | "/app/foh" }
   | { kind: "section"; label: string; icon: Icon; slug: (typeof OWNER_SECTIONS)[number]["slug"] };
 
+const route = (label: string, icon: Icon, to: Extract<NavItem, { kind: "route" }>["to"]): NavItem => ({ kind: "route", label, icon, to });
+
 const s = (slug: (typeof OWNER_SECTIONS)[number]["slug"]): NavItem => {
   const x = OWNER_SECTIONS.find((o) => o.slug === slug)!;
   return { kind: "section", label: x.label, icon: x.icon, slug };
@@ -32,9 +34,9 @@ const s = (slug: (typeof OWNER_SECTIONS)[number]["slug"]): NavItem => {
 
 export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Operations", items: [
-    { kind: "route", label: "Overview", icon: LayoutDashboard, to: "/app/owner/overview" },
-    { kind: "route", label: "Reservations", icon: CalendarDays, to: "/app/owner/reservations" },
-    { kind: "route", label: "Floor Management", icon: LayoutGrid, to: "/app/owner/floor" },
+    route("Overview", LayoutDashboard, "/app/owner/overview"),
+    route("Reservations", CalendarDays, "/app/owner/reservations"),
+    route("Floor Management", Grid2x2, "/app/owner/floor"),
     s("orders"),
     { kind: "route", label: "Kitchen", icon: ChefHat, to: "/app/kds" },
     { kind: "route", label: "FOH View", icon: TabletSmartphone, to: "/app/foh" },

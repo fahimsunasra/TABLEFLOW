@@ -2,7 +2,8 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { money, useMembership, type Membership } from "@/lib/tenant";
+import { money, membershipQuery, settingsOf, useMembership, type Membership } from "@/lib/tenant";
+import { antiGhostOf } from "@/lib/antighost";
 import { useLiveTables } from "@/lib/realtime";
 import { label, TABLE_STATUS_CLASS, TABLE_STATUSES } from "@/lib/status";
 import { PageHeader, Panel, Pill } from "@/components/tf/Ui";
@@ -177,12 +178,58 @@ function Staff({ m }: { m: Membership }) {
 
 function SettingsView({ m }: { m: Membership }) {
   const r = m.restaurants;
+  const qc = useQueryClient();
+  const ag = antiGhostOf(settingsOf(r));
+  async function patchSettings(patch: Record<string, unknown>) {
+    const { error } = await supabase.from("restaurants").update({ settings_json: { ...settingsOf(r), ...patch } }).eq("id", m.restaurant_id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: membershipQuery.queryKey });
+    toast.success("Settings saved");
+  }
   return (
-    <Panel className="grid gap-4 sm:grid-cols-2">
-      {[["Name", r.name], ["Guest URL", `/guest/${r.slug}`], ["Address", r.address], ["Currency", r.currency], ["Tax rate", `${r.tax_rate}%`], ["Service charge", `${r.service_charge_pct}%`]].map(([k, v]) => (
-        <div key={k}><div className="text-xs text-muted-foreground">{k}</div><div className="font-medium">{v ?? "—"}</div></div>
-      ))}
-    </Panel>
+    <div className="space-y-6">
+      <Panel>
+        <h2 className="mb-4 font-semibold">Anti-Ghosting & Food-Waste Protection</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium">Require Pre-Order Deposit %</div>
+              <p className="text-xs text-muted-foreground">Guests must pay this share of their pre-order before the kitchen accepts it.</p>
+            </div>
+            <div className="flex gap-1 rounded-lg bg-muted p-1">
+              {[0, 50, 100].map((p) => (
+                <button key={p} onClick={() => patchSettings({ preorder_deposit_pct: p })} className={`rounded-md px-3 py-1 text-xs font-medium ${ag.deposit_pct === p ? "bg-card shadow-card" : "text-muted-foreground"}`}>{p}%</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium">GPS Proximity Hold before Kitchen Fire</div>
+              <p className="text-xs text-muted-foreground">Pre-orders only reach the kitchen once the guest shares their location nearby, or FOH fires manually.</p>
+            </div>
+            <Switch checked={ag.gps_hold} onCheckedChange={(v) => patchSettings({ gps_proximity_hold: v })} />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium">Auto-Flag Repeat No-Shows</div>
+              <p className="text-xs text-muted-foreground">Mark guests in the CRM after repeated no-shows so staff can ask for prepayment.</p>
+            </div>
+            <Switch checked={ag.auto_flag_no_show} onCheckedChange={(v) => patchSettings({ auto_flag_no_show: v })} />
+          </div>
+        </div>
+      </Panel>
+      <Panel className="grid gap-4 sm:grid-cols-2">
+        <h2 className="font-semibold sm:col-span-2">Restaurant</h2>
+        <div className="grid gap-4 sm:grid-cols-2 sm:col-span-2">
+          <div><div className="text-xs text-muted-foreground">Name</div><div className="font-medium">{r.name}</div></div>
+          <div><div className="text-xs text-muted-foreground">Guest URL</div><div className="font-medium">/guest/{r.slug}</div></div>
+          <div><div className="text-xs text-muted-foreground">Address</div><div className="font-medium">{r.address ?? "—"}</div></div>
+          <div><div className="text-xs text-muted-foreground">Currency</div><div className="font-medium">{r.currency}</div></div>
+          <div><div className="text-xs text-muted-foreground">Tax rate</div><div className="font-medium">{r.tax_rate}%</div></div>
+          <div><div className="text-xs text-muted-foreground">Service charge</div><div className="font-medium">{r.service_charge_pct}%</div></div>
+        </div>
+      </Panel>
+    </div>
   );
 }
 

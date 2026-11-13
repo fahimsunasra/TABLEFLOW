@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveTables } from "@/lib/realtime";
+import { settingsOf } from "@/lib/tenant";
+import { antiGhostOf } from "@/lib/antighost";
 import { RoleGate } from "@/components/tf/RoleGate";
 import { Button } from "@/components/ui/button";
 import type { Membership } from "@/lib/tenant";
@@ -36,11 +38,20 @@ function Kds({ m }: { m: Membership }) {
   const q = useQuery({
     queryKey: ["kds", rid],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("*, tables(table_number), order_items(*)")
+      const { data, error } = await supabase.from("orders").select("*, tables(table_number), order_items(*), reservations(pre_order_paid_amount, is_proximity_verified, eta_change_count, customer_name)")
         .eq("restaurant_id", rid).in("status", ["accepted", "preparing", "ready", "incoming"])
         .or(`scheduled_fire_at.is.null,scheduled_fire_at.lte.${new Date().toISOString()}`).order("created_at");
       if (error) throw error;
-      return data.filter((o) => !(o.order_type === "eta_preorder" && o.status === "incoming"));
+      const gpsHold = antiGhostOf(settingsOf(m.restaurants)).gps_hold;
+      return data.filter((o) => {
+        if (o.order_type !== "eta_preorder") return !(o.order_type === "eta_preorder" && o.status === "incoming");
+        if (o.status === "incoming") return false;
+        if (gpsHold) {
+          const r = o.reservations as { pre_order_paid_amount: number; is_proximity_verified: boolean } | null;
+          if (!r || r.pre_order_paid_amount <= 0 || !r.is_proximity_verified) return false;
+        }
+        return true;
+      });
     },
   });
   useLiveTables(rid, ["orders", "order_items"], [["kds", rid]]);

@@ -2,13 +2,14 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { ChevronLeft, ChevronRight, Flame, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, Plus, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { money, settingsOf, useMembership, membershipQuery, type Row } from "@/lib/tenant";
 import { useLiveTables } from "@/lib/realtime";
 import { useDateRange, ymd } from "@/lib/date-range";
 import { FIRE_MODES, fireModeOf, type FireMode } from "@/lib/preorder";
+import { antiGhostOf } from "@/lib/antighost";
 import { label } from "@/lib/status";
 import { PageHeader, Panel, Pill } from "@/components/tf/Ui";
 import { emptyRes, ReservationFields, toPayload, type ResForm } from "@/components/tf/ReservationForm";
@@ -62,6 +63,7 @@ function Reservations() {
   const list = status === "all" ? inRange : inRange.filter((r) => r.status === status);
   const open = all.find((r) => r.id === openId);
   const setOpen = (id?: string) => navigate({ search: { id }, replace: true });
+  const gpsHold = antiGhostOf(settingsOf(m!.restaurants)).gps_hold;
 
   return (
     <>
@@ -88,7 +90,7 @@ function Reservations() {
           <Panel className="mt-4 overflow-x-auto p-0">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50 text-left text-muted-foreground">
-                <tr>{["Date", "Time", "ETA", "Guest", "Party", "Table", "Notes", "Deposit", "Status"].map((h) => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr>
+                <tr>{["Date", "Time", "ETA", "Guest", "Party", "Table", "Notes", "Protection", "Status"].map((h) => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y">
                 {list.map((r) => (
@@ -101,6 +103,13 @@ function Reservations() {
                     <td className="tabular px-4 py-3">{r.tables?.table_number ?? "—"}</td>
                     <td className="max-w-56 truncate px-4 py-3 text-xs text-muted-foreground">{[r.dietary_notes, r.special_requests].filter(Boolean).join(" · ")}</td>
                     <td className="px-4 py-3">{r.deposit_paid ? <Pill className="border-success/40 text-success">Paid</Pill> : <span className="text-xs text-muted-foreground">—</span>}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {r.pre_order_paid_amount > 0 && <Pill className="border-success/40 bg-success/10 text-success">Deposit {money(r.pre_order_paid_amount, m!.restaurants.currency)}</Pill>}
+                        {r.is_proximity_verified && <Pill className="border-electric/40 bg-electric/10 text-electric">GPS &lt;2km</Pill>}
+                        {gpsHold && r.eta_change_count >= 1 && !r.is_proximity_verified && <Pill className="border-warning/60 bg-warning/15 text-warning-foreground"><TriangleAlert className="mr-1 h-3 w-3" />Unverified ETA — Hold Fire</Pill>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3"><Pill className={STATUS_CLS[r.status]}>{label(r.status)}</Pill></td>
                   </tr>
                 ))}
@@ -142,7 +151,7 @@ function Reservations() {
       <CreateDialog open={creating} onOpenChange={setCreating} rid={rid} onDone={() => qc.invalidateQueries({ queryKey: ["res-all", rid] })} />
       <Sheet open={!!open} onOpenChange={(v) => !v && setOpen(undefined)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          {open && <Details key={open.id} r={open} cur={m!.restaurants.currency} onSaved={() => qc.invalidateQueries({ queryKey: ["res-all", rid] })} />}
+          {open && <Details key={open.id} r={open} cur={m!.restaurants.currency} gpsHold={gpsHold} onSaved={() => qc.invalidateQueries({ queryKey: ["res-all", rid] })} />}
         </SheetContent>
       </Sheet>
     </>
@@ -261,7 +270,7 @@ function CreateDialog({ open, onOpenChange, rid, onDone }: { open: boolean; onOp
   );
 }
 
-function Details({ r, cur, onSaved }: { r: Res; cur: string; onSaved: () => void }) {
+function Details({ r, cur, gpsHold, onSaved }: { r: Res; cur: string; gpsHold: boolean; onSaved: () => void }) {
   const [f, setF] = useState<ResForm>({
     customer_name: r.customer_name, customer_phone: r.customer_phone ?? "", customer_email: r.customer_email ?? "", party_size: r.party_size,
     booking_date: r.booking_date, arrival_time: r.arrival_time.slice(0, 5), eta: r.eta_time ? format(new Date(r.eta_time), "HH:mm") : "",
@@ -276,6 +285,9 @@ function Details({ r, cur, onSaved }: { r: Res; cur: string; onSaved: () => void
     const { error } = await supabase.from("reservations").update({ status }).eq("id", r.id);
     if (error) toast.error(error.message); else onSaved();
   };
+  const gpsHoldProp = gpsHold;
+  const unverified = gpsHoldProp && r.eta_change_count >= 1 && !r.is_proximity_verified;
+  const unpaid = r.pre_order_paid_amount <= 0;
   async function save() {
     const { error } = await supabase.from("reservations").update(toPayload(f)).eq("id", r.id);
     if (error) { toast.error(error.message); return; }
@@ -286,10 +298,16 @@ function Details({ r, cur, onSaved }: { r: Res; cur: string; onSaved: () => void
     const { error } = await supabase.from("orders").update({ status: "accepted", scheduled_fire_at: null }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Fired to kitchen"); qc.invalidateQueries({ queryKey: ["res-preorders", r.id] }); }
   }
+  const [confirmFire, setConfirmFire] = useState<string | null>(null);
   const held = (s: string | null) => s !== null && (s === "infinity" || new Date(s) > new Date());
   return (
     <>
       <SheetHeader><SheetTitle>Reservation Details</SheetTitle></SheetHeader>
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {r.pre_order_paid_amount > 0 && <Pill className="border-success/40 bg-success/10 text-success">Deposit Paid ({money(r.pre_order_paid_amount, m.restaurants.currency)})</Pill>}
+        {r.is_proximity_verified && <Pill className="border-electric/40 bg-electric/10 text-electric">GPS Verified (&lt;2km)</Pill>}
+        {unverified && <Pill className="border-warning/60 bg-warning/15 text-warning-foreground"><TriangleAlert className="mr-1 h-3 w-3" />Unverified ETA — Hold Kitchen Fire</Pill>}
+      </div>
       <div className="mt-4 flex flex-wrap gap-1.5">
         {STATUSES.map((s) => (
           <button key={s} onClick={() => patchStatus(s)} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${r.status === s ? STATUS_CLS[s] : "text-muted-foreground hover:bg-muted"}`}>{label(s)}</button>
@@ -308,10 +326,28 @@ function Details({ r, cur, onSaved }: { r: Res; cur: string; onSaved: () => void
               </span>
             </div>
             <ul className="mt-1 text-xs text-muted-foreground">{o.order_items.map((i, idx) => <li key={idx}>{i.quantity}× {i.name}</li>)}</ul>
-            {o.status === "accepted" && held(o.scheduled_fire_at) && <Button size="sm" variant="warning" className="mt-2" onClick={() => fire(o.id)}><Flame />Fire now</Button>}
+            {o.status === "accepted" && held(o.scheduled_fire_at) && (
+              unpaid && unverified
+                ? <Button size="sm" variant="warning" className="mt-2" onClick={() => setConfirmFire(o.id)}><Flame />Fire to KDS</Button>
+                : <Button size="sm" variant="warning" className="mt-2" onClick={() => fire(o.id)}><Flame />Fire to KDS</Button>
+            )}
+            {o.status === "incoming" && <Pill className="mt-2 border-warning/50 text-warning-foreground">Awaiting approval — Approve in Overview</Pill>}
           </div>
         )) : <p className="text-xs text-muted-foreground">No pre-order for this booking.</p>}
       </div>
+      <Dialog open={!!confirmFire} onOpenChange={(v) => !v && setConfirmFire(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Fire to kitchen without protection?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This guest has no deposit paid and no GPS verification. If they don't arrive, the prepared food goes to waste.
+            Fire this pre-order anyway?
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmFire(null)}>Keep holding</Button>
+            <Button variant="warning" onClick={() => { const id = confirmFire; setConfirmFire(null); if (id) fire(id); }}><Flame />Fire anyway</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Button variant="electric" className="mt-6 w-full" onClick={save}>Save changes</Button>
     </>
   );

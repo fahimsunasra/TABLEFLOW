@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Flame, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveTables } from "@/lib/realtime";
 import { label, TABLE_STATUS_CLASS, TABLE_STATUSES } from "@/lib/status";
+import { money, settingsOf } from "@/lib/tenant";
+import { antiGhostOf } from "@/lib/antighost";
 import { RoleGate } from "@/components/tf/RoleGate";
 import { Logo } from "@/components/tf/Logo";
+import { Pill } from "@/components/tf/Ui";
 import { Button } from "@/components/ui/button";
 import type { Membership } from "@/lib/tenant";
 
@@ -19,6 +23,7 @@ function Foh({ m }: { m: Membership }) {
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [sel, setSel] = useState<string | null>(null);
+  const gpsHold = antiGhostOf(settingsOf(m.restaurants)).gps_hold;
   const q = useQuery({
     queryKey: ["foh", rid],
     queryFn: async () => {
@@ -41,6 +46,15 @@ function Foh({ m }: { m: Membership }) {
   async function advance(id: string, status: "checked_in" | "seated") {
     const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
+    refresh();
+  }
+  async function fireKitchen(id: string) {
+    const { error } = await supabase.from("reservations").update({ status: "seated" }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    const { error: fireErr } = await supabase.from("orders").update({ status: "accepted", scheduled_fire_at: null })
+      .eq("reservation_id", id).in("status", ["incoming", "accepted"]);
+    if (fireErr) toast.error(fireErr.message);
+    else toast.success("Guest arrived — pre-orders fired to kitchen");
     refresh();
   }
   const selected = q.data?.tables.find((t) => t.id === sel);
@@ -75,16 +89,26 @@ function Foh({ m }: { m: Membership }) {
           <div className="rounded-2xl border bg-card p-4 shadow-card">
             <div className="mb-3 font-semibold">Arrivals today</div>
             <ul className="space-y-2">
-              {q.data?.res.map((r) => (
+              {q.data?.res.map((r) => {
+                const unverified = gpsHold && r.eta_change_count >= 1 && !r.is_proximity_verified;
+                const hasPreorder = r.pre_order_paid_amount > 0;
+                return (
                 <li key={r.id} className="rounded-xl border p-3">
                   <div className="flex justify-between"><span className="font-medium">{r.customer_name}</span><span className="tabular text-sm">{r.arrival_time.slice(0, 5)}</span></div>
                   <div className="text-xs text-muted-foreground">{r.party_size} guests · {label(r.status)}{r.dietary_notes ? ` · ${r.dietary_notes}` : ""}</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {r.pre_order_paid_amount > 0 && <Pill className="border-success/40 bg-success/10 text-success">Deposit paid ({money(r.pre_order_paid_amount, m.restaurants.currency)})</Pill>}
+                    {r.is_proximity_verified && <Pill className="border-electric/40 bg-electric/10 text-electric">GPS verified</Pill>}
+                    {unverified && <Pill className="border-warning/60 bg-warning/15 text-warning-foreground"><TriangleAlert className="mr-1 h-3 w-3" />Unverified ETA — Hold Fire</Pill>}
+                  </div>
                   <div className="mt-2 flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => advance(r.id, "checked_in")}>Check in</Button>
                     <Button size="sm" variant="success" onClick={() => advance(r.id, "seated")}>Seat</Button>
+                    {hasPreorder && <Button size="sm" variant="warning" onClick={() => fireKitchen(r.id)}><Flame />Guest Arrived — Fire Kitchen</Button>}
                   </div>
                 </li>
-              ))}
+                );
+              })}
               {q.data && !q.data.res.length && <li className="text-sm text-muted-foreground">No more arrivals.</li>}
             </ul>
           </div>
