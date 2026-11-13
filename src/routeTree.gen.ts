@@ -20,6 +20,8 @@ import { Route as AppOwnerRouteImport } from './routes/app.owner'
 import { Route as GuestRestaurantSlugRouteImport } from './routes/guest.$restaurantSlug'
 import { Route as AppOwnerIndexRouteImport } from './routes/app.owner.index'
 import { Route as AppOwnerSectionRouteImport } from './routes/app.owner.$section'
+import { Route as AppOwnerOverviewRouteImport } from './routes/app.owner.overview'
+import { Route as AppOwnerReservationsRouteImport } from './routes/app.owner.reservations'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +78,16 @@ const AppOwnerSectionRoute = AppOwnerSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => AppOwnerRoute,
 } as any)
+const AppOwnerOverviewRoute = AppOwnerOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => AppOwnerRoute,
+} as any)
+const AppOwnerReservationsRoute = AppOwnerReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => AppOwnerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +100,8 @@ export interface FileRoutesByFullPath {
   '/guest/$restaurantSlug': typeof GuestRestaurantSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/owner/$section': typeof AppOwnerSectionRoute
+  '/app/owner/overview': typeof AppOwnerOverviewRoute
+  '/app/owner/reservations': typeof AppOwnerReservationsRoute
   '/app/owner/': typeof AppOwnerIndexRoute
 }
 export interface FileRoutesByTo {
@@ -99,6 +113,8 @@ export interface FileRoutesByTo {
   '/guest/$restaurantSlug': typeof GuestRestaurantSlugRoute
   '/app': typeof AppIndexRoute
   '/app/owner/$section': typeof AppOwnerSectionRoute
+  '/app/owner/overview': typeof AppOwnerOverviewRoute
+  '/app/owner/reservations': typeof AppOwnerReservationsRoute
   '/app/owner': typeof AppOwnerIndexRoute
 }
 export interface FileRoutesById {
@@ -113,6 +129,8 @@ export interface FileRoutesById {
   '/guest/$restaurantSlug': typeof GuestRestaurantSlugRoute
   '/app/': typeof AppIndexRoute
   '/app/owner/$section': typeof AppOwnerSectionRoute
+  '/app/owner/overview': typeof AppOwnerOverviewRoute
+  '/app/owner/reservations': typeof AppOwnerReservationsRoute
   '/app/owner/': typeof AppOwnerIndexRoute
 }
 export interface FileRouteTypes {
@@ -128,6 +146,8 @@ export interface FileRouteTypes {
     | '/guest/$restaurantSlug'
     | '/app/'
     | '/app/owner/$section'
+    | '/app/owner/overview'
+    | '/app/owner/reservations'
     | '/app/owner/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -139,6 +159,8 @@ export interface FileRouteTypes {
     | '/guest/$restaurantSlug'
     | '/app'
     | '/app/owner/$section'
+    | '/app/owner/overview'
+    | '/app/owner/reservations'
     | '/app/owner'
   id:
     | '__root__'
@@ -152,6 +174,8 @@ export interface FileRouteTypes {
     | '/guest/$restaurantSlug'
     | '/app/'
     | '/app/owner/$section'
+    | '/app/owner/overview'
+    | '/app/owner/reservations'
     | '/app/owner/'
   fileRoutesById: FileRoutesById
 }
@@ -242,16 +266,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOwnerSectionRouteImport
       parentRoute: typeof AppOwnerRoute
     }
+    '/app/owner/overview': {
+      id: '/app/owner/overview'
+      path: '/overview'
+      fullPath: '/app/owner/overview'
+      preLoaderRoute: typeof AppOwnerOverviewRouteImport
+      parentRoute: typeof AppOwnerRoute
+    }
+    '/app/owner/reservations': {
+      id: '/app/owner/reservations'
+      path: '/reservations'
+      fullPath: '/app/owner/reservations'
+      preLoaderRoute: typeof AppOwnerReservationsRouteImport
+      parentRoute: typeof AppOwnerRoute
+    }
   }
 }
 
 interface AppOwnerRouteChildren {
   AppOwnerSectionRoute: typeof AppOwnerSectionRoute
+  AppOwnerOverviewRoute: typeof AppOwnerOverviewRoute
+  AppOwnerReservationsRoute: typeof AppOwnerReservationsRoute
   AppOwnerIndexRoute: typeof AppOwnerIndexRoute
 }
 
 const AppOwnerRouteChildren: AppOwnerRouteChildren = {
   AppOwnerSectionRoute: AppOwnerSectionRoute,
+  AppOwnerOverviewRoute: AppOwnerOverviewRoute,
+  AppOwnerReservationsRoute: AppOwnerReservationsRoute,
   AppOwnerIndexRoute: AppOwnerIndexRoute,
 }
 

@@ -413,6 +413,7 @@ export type Database = {
           id: string
           party_size: number
           restaurant_id: string
+          seating_preference: string | null
           special_requests: string | null
           status: Database["public"]["Enums"]["reservation_status"]
           table_id: string | null
@@ -430,6 +431,7 @@ export type Database = {
           id?: string
           party_size?: number
           restaurant_id: string
+          seating_preference?: string | null
           special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           table_id?: string | null
@@ -447,6 +449,7 @@ export type Database = {
           id?: string
           party_size?: number
           restaurant_id?: string
+          seating_preference?: string | null
           special_requests?: string | null
           status?: Database["public"]["Enums"]["reservation_status"]
           table_id?: string | null
@@ -561,40 +564,53 @@ export type Database = {
         Row: {
           capacity: number
           id: string
+          merged_into: string | null
           pos_x: number
           pos_y: number
           qr_code_token: string
           restaurant_id: string
           shape: Database["public"]["Enums"]["table_shape"]
           status: Database["public"]["Enums"]["table_status"]
+          status_changed_at: string
           table_number: string
           zone: Database["public"]["Enums"]["table_zone"]
         }
         Insert: {
           capacity?: number
           id?: string
+          merged_into?: string | null
           pos_x?: number
           pos_y?: number
           qr_code_token?: string
           restaurant_id: string
           shape?: Database["public"]["Enums"]["table_shape"]
           status?: Database["public"]["Enums"]["table_status"]
+          status_changed_at?: string
           table_number: string
           zone?: Database["public"]["Enums"]["table_zone"]
         }
         Update: {
           capacity?: number
           id?: string
+          merged_into?: string | null
           pos_x?: number
           pos_y?: number
           qr_code_token?: string
           restaurant_id?: string
           shape?: Database["public"]["Enums"]["table_shape"]
           status?: Database["public"]["Enums"]["table_status"]
+          status_changed_at?: string
           table_number?: string
           zone?: Database["public"]["Enums"]["table_zone"]
         }
         Relationships: [
+          {
+            foreignKeyName: "tables_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tables_restaurant_id_fkey"
             columns: ["restaurant_id"]

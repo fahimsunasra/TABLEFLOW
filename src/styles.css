@@ -135,3 +135,6 @@
 @utility shadow-card { box-shadow: var(--shadow-card); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
 @utility tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+@utility bg-hatched {
+  background-image: repeating-linear-gradient(45deg, var(--muted) 0 8px, var(--card) 8px 16px);
+}

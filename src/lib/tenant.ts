@@ -50,3 +50,10 @@ export function useMembership() {
 export function money(n: number | string | null | undefined, currency = "AUD") {
   return new Intl.NumberFormat("en-AU", { style: "currency", currency }).format(Number(n ?? 0));
 }
+
+export type Row<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"];
+
+export function settingsOf(r: Restaurant): Record<string, unknown> {
+  const s = r.settings_json;
+  return s && typeof s === "object" && !Array.isArray(s) ? (s as Record<string, unknown>) : {};
+}

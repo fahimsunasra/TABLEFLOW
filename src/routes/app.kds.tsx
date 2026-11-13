@@ -37,12 +37,15 @@ function Kds({ m }: { m: Membership }) {
     queryKey: ["kds", rid],
     queryFn: async () => {
       const { data, error } = await supabase.from("orders").select("*, tables(table_number), order_items(*)")
-        .eq("restaurant_id", rid).in("status", ["incoming", "accepted", "preparing", "ready"]).order("created_at");
+        .eq("restaurant_id", rid).in("status", ["accepted", "preparing", "ready", "incoming"])
+        .or(`scheduled_fire_at.is.null,scheduled_fire_at.lte.${new Date().toISOString()}`).order("created_at");
       if (error) throw error;
-      return data;
+      return data.filter((o) => !(o.order_type === "eta_preorder" && o.status === "incoming"));
     },
   });
   useLiveTables(rid, ["orders", "order_items"], [["kds", rid]]);
+  // Scheduled pre-orders appear on their fire time without a row change.
+  useEffect(() => { const i = setInterval(() => qc.invalidateQueries({ queryKey: ["kds", rid] }), 30000); return () => clearInterval(i); }, [qc, rid]);
 
   async function move(id: string, status: string) {
     const { error } = await supabase.from("orders").update({ status: status as never }).eq("id", id);
