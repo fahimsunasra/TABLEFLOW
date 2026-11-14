@@ -48,7 +48,7 @@ function Guest() {
   const q = useQuery({
     queryKey: ["guest", restaurantSlug],
     queryFn: async () => {
-      const { data: r, error } = await supabase.from("restaurants").select("id,name,slug,address,currency,tax_rate,service_charge_pct,settings_json").eq("slug", restaurantSlug).maybeSingle();
+      const { data: r, error } = await supabase.rpc("get_public_restaurant", { _slug: restaurantSlug }).maybeSingle();
       if (error) throw error;
       if (!r) return null;
       const [c, i] = await Promise.all([

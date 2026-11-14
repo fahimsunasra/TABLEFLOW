@@ -630,6 +630,19 @@ export type Database = {
         Args: { _full_name: string; _name: string; _slug: string }
         Returns: string
       }
+      get_public_restaurant: {
+        Args: { _slug: string }
+        Returns: {
+          address: string
+          currency: string
+          id: string
+          name: string
+          service_charge_pct: number
+          settings_json: Json
+          slug: string
+          tax_rate: number
+        }[]
+      }
       has_staff_role: {
         Args: {
           _rid: string
