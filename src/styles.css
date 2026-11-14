@@ -138,3 +138,6 @@
 @utility bg-hatched {
   background-image: repeating-linear-gradient(45deg, var(--muted) 0 8px, var(--card) 8px 16px);
 }
+
+@keyframes tf-flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@utility animate-flash { animation: tf-flash 1s ease-in-out infinite; }
