@@ -24,7 +24,6 @@ export type Database = {
           loyalty_points: number
           loyalty_tier: string
           notes: string | null
-          no_show_count: number
           phone: string | null
           restaurant_id: string
           tags_array: string[]
@@ -39,7 +38,6 @@ export type Database = {
           loyalty_points?: number
           loyalty_tier?: string
           notes?: string | null
-          no_show_count?: number
           phone?: string | null
           restaurant_id: string
           tags_array?: string[]
@@ -54,7 +52,6 @@ export type Database = {
           loyalty_points?: number
           loyalty_tier?: string
           notes?: string | null
-          no_show_count?: number
           phone?: string | null
           restaurant_id?: string
           tags_array?: string[]
@@ -412,12 +409,9 @@ export type Database = {
           customer_phone: string | null
           deposit_paid: boolean
           dietary_notes: string | null
-          eta_change_count: number
           eta_time: string | null
           id: string
-          is_proximity_verified: boolean
           party_size: number
-          pre_order_paid_amount: number
           restaurant_id: string
           seating_preference: string | null
           special_requests: string | null
@@ -433,12 +427,9 @@ export type Database = {
           customer_phone?: string | null
           deposit_paid?: boolean
           dietary_notes?: string | null
-          eta_change_count?: number
           eta_time?: string | null
           id?: string
-          is_proximity_verified?: boolean
           party_size?: number
-          pre_order_paid_amount?: number
           restaurant_id: string
           seating_preference?: string | null
           special_requests?: string | null
@@ -454,12 +445,9 @@ export type Database = {
           customer_phone?: string | null
           deposit_paid?: boolean
           dietary_notes?: string | null
-          eta_change_count?: number
           eta_time?: string | null
           id?: string
-          is_proximity_verified?: boolean
           party_size?: number
-          pre_order_paid_amount?: number
           restaurant_id?: string
           seating_preference?: string | null
           special_requests?: string | null
@@ -650,29 +638,6 @@ export type Database = {
         Returns: boolean
       }
       is_member: { Args: { _rid: string }; Returns: boolean }
-      guest_update_eta: {
-        Args: { _reservation_id: string; _new_eta: string }
-        Returns: string
-      }
-      guest_verify_proximity: {
-        Args: { _reservation_id: string; _lat: number; _lng: number }
-        Returns: boolean
-      }
-      guest_track: { Args: { _reservation_id: string }; Returns: Json }
-      place_guest_preorder: {
-        Args: {
-          _slug: string
-          _name: string
-          _phone: string
-          _email: string
-          _party_size: number
-          _booking_date: string
-          _arrival_time: string
-          _items: Json
-          _notes: string
-        }
-        Returns: Json
-      }
       place_guest_order: {
         Args: {
           _items: Json
