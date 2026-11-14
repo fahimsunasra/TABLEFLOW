@@ -36,6 +36,13 @@
       "when": 1794656614573,
       "tag": "0004_guest_preorder_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794656751476,
+      "tag": "0005_manual_fire_and_no_show_flag",
+      "breakpoints": true
     }
   ]
 }

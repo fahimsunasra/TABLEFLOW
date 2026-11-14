@@ -51,7 +51,7 @@ function Foh({ m }: { m: Membership }) {
   async function fireKitchen(id: string) {
     const { error } = await supabase.from("reservations").update({ status: "seated" }).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    const { error: fireErr } = await supabase.from("orders").update({ status: "accepted", scheduled_fire_at: null })
+    const { error: fireErr } = await supabase.from("orders").update({ status: "accepted", scheduled_fire_at: null, fired_manually: true })
       .eq("reservation_id", id).in("status", ["incoming", "accepted"]);
     if (fireErr) toast.error(fireErr.message);
     else toast.success("Guest arrived — pre-orders fired to kitchen");

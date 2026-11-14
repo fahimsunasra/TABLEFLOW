@@ -295,7 +295,7 @@ function Details({ r, cur, gpsHold, onSaved }: { r: Res; cur: string; gpsHold: b
     onSaved();
   }
   async function fire(id: string) {
-    const { error } = await supabase.from("orders").update({ status: "accepted", scheduled_fire_at: null }).eq("id", id);
+    const { error } = await supabase.from("orders").update({ status: "accepted", scheduled_fire_at: null, fired_manually: true }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Fired to kitchen"); qc.invalidateQueries({ queryKey: ["res-preorders", r.id] }); }
   }
   const [confirmFire, setConfirmFire] = useState<string | null>(null);
