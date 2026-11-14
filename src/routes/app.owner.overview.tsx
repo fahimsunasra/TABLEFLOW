@@ -37,6 +37,7 @@ function Overview() {
         supabase.from("tables").select("id,status,status_changed_at").eq("restaurant_id", rid),
         supabase.from("order_items").select("name,quantity,unit_price,orders!inner(created_at,status)").eq("restaurant_id", rid).gte("orders.created_at", k[0]!).lt("orders.created_at", k[1]!).neq("orders.status", "cancelled"),
       ]);
+      for (const x of [o, r, t, items]) if (x.error) throw x.error;
       return { orders: o.data ?? [], res: r.data ?? [], tables: t.data ?? [], items: items.data ?? [] };
     },
   });

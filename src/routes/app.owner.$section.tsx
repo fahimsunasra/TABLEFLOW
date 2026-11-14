@@ -181,7 +181,7 @@ function SettingsView({ m }: { m: Membership }) {
   const qc = useQueryClient();
   const ag = antiGhostOf(settingsOf(r));
   async function patchSettings(patch: Record<string, unknown>) {
-    const { error } = await supabase.from("restaurants").update({ settings_json: { ...settingsOf(r), ...patch } }).eq("id", m.restaurant_id);
+    const { error } = await supabase.from("restaurants").update({ settings_json: { ...settingsOf(r), ...patch } as never }).eq("id", m.restaurant_id);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: membershipQuery.queryKey });
     toast.success("Settings saved");
@@ -234,6 +234,6 @@ function SettingsView({ m }: { m: Membership }) {
 }
 
 const VIEWS: Record<string, ((p: { m: Membership }) => React.ReactNode) | undefined> = {
-  reservations: Reservations, "floor-plan": FloorPlan, orders: Orders, "qr-codes": QrCodes, menu: Menu,
+  orders: Orders, "qr-codes": QrCodes, menu: Menu,
   promotions: Promotions, crm: Crm, staff: Staff, settings: SettingsView,
 };

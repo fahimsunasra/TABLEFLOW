@@ -304,7 +304,7 @@ function Details({ r, cur, gpsHold, onSaved }: { r: Res; cur: string; gpsHold: b
     <>
       <SheetHeader><SheetTitle>Reservation Details</SheetTitle></SheetHeader>
       <div className="mt-4 flex flex-wrap gap-1.5">
-        {r.pre_order_paid_amount > 0 && <Pill className="border-success/40 bg-success/10 text-success">Deposit Paid ({money(r.pre_order_paid_amount, m.restaurants.currency)})</Pill>}
+        {r.pre_order_paid_amount > 0 && <Pill className="border-success/40 bg-success/10 text-success">Deposit Paid ({money(r.pre_order_paid_amount, cur)})</Pill>}
         {r.is_proximity_verified && <Pill className="border-electric/40 bg-electric/10 text-electric">GPS Verified (&lt;2km)</Pill>}
         {unverified && <Pill className="border-warning/60 bg-warning/15 text-warning-foreground"><TriangleAlert className="mr-1 h-3 w-3" />Unverified ETA — Hold Kitchen Fire</Pill>}
       </div>

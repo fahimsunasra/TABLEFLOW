@@ -44,7 +44,7 @@ function Kds({ m }: { m: Membership }) {
       if (error) throw error;
       const gpsHold = antiGhostOf(settingsOf(m.restaurants)).gps_hold;
       return data.filter((o) => {
-        if (o.order_type !== "eta_preorder") return !(o.order_type === "eta_preorder" && o.status === "incoming");
+        if (o.order_type !== "eta_preorder") return true;
         if (o.status === "incoming") return false;
         if (gpsHold) {
           const r = o.reservations as { pre_order_paid_amount: number; is_proximity_verified: boolean } | null;

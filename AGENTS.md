@@ -35,3 +35,5 @@ use the editor.
 - Restaurant creation goes through the `create_restaurant` RPC so the creator always becomes owner atomically.
 - `/app/*` is a client-only gate (`ssr: false`); role-to-area rules live in `src/lib/tenant.ts` (`AREA_ROLES`) and are tested in `src/test/roles.test.ts`.
 - Kitchen Display is the only dark-mode surface: it wraps its tree in `.dark`.
+- Pre-order firing mode lives in `restaurants.settings_json.preorder_fire_mode`; approval sets `orders.scheduled_fire_at` via `computeFireAt` (`'infinity'` = held for manual FOH fire) and the KDS hides orders until that time.
+- The owner top-bar date filter is shared through `DateRangeContext` (`src/lib/date-range.ts`); owner pages read it instead of keeping their own range.

@@ -82,7 +82,7 @@ function Onboarding() {
       const rows = Object.entries(zones).flatMap(([zone, count], zi) =>
         Array.from({ length: count }, (_, i) => ({
           restaurant_id: rid!, table_number: `T-${String(n++).padStart(2, "0")}`,
-          zone: zone as "Main Dining", capacity: 4, pos_x: i + 1, pos_y: zi + 1,
+          zone: zone as "Main Dining", capacity: 4, pos_x: 40 + (i % 6) * 170, pos_y: 40 + (zi * 2 + Math.floor(i / 6)) * 150,
         })),
       );
       const { error } = await supabase.from("tables").upsert(rows, { onConflict: "restaurant_id,table_number" });

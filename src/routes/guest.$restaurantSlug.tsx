@@ -73,7 +73,7 @@ function Guest() {
       </header>
       <nav className="sticky top-0 z-10 flex gap-1 border-b bg-background/95 px-4 py-2 backdrop-blur">
         {MODES.map(([m, l]) => (
-          <button key={m} onClick={() => setMode(m)} className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${active === m ? "bg-navy text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>{l}</button>
+          <button key={m} onClick={() => setMode(m === "menu" ? undefined : m)} className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${active === m ? "bg-navy text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>{l}</button>
         ))}
       </nav>
       {active === "track" && trackId ? <Track rid={r.id} reservationId={trackId} cur={r.currency} /> :
