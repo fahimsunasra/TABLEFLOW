@@ -37,3 +37,4 @@ use the editor.
 - Kitchen Display is the only dark-mode surface: it wraps its tree in `.dark`.
 - Pre-order firing mode lives in `restaurants.settings_json.preorder_fire_mode`; approval sets `orders.scheduled_fire_at` via `computeFireAt` (`'infinity'` = held for manual FOH fire) and the KDS hides orders until that time.
 - The owner top-bar date filter is shared through `DateRangeContext` (`src/lib/date-range.ts`); owner pages read it instead of keeping their own range.
+- Pre-order kitchen fire: KDS shows an eta_preorder only if `orders.fired_manually` (FOH/owner manual fire) or `canAutoFire` in `src/lib/antighost.ts` passes; no-show counting/flagging is a DB trigger on reservations.

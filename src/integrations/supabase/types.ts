@@ -278,6 +278,7 @@ export type Database = {
           created_at: string
           customer_notes: string | null
           discount_amount: number
+          fired_manually: boolean
           id: string
           order_number: number
           order_type: Database["public"]["Enums"]["order_type"]
@@ -297,6 +298,7 @@ export type Database = {
           created_at?: string
           customer_notes?: string | null
           discount_amount?: number
+          fired_manually?: boolean
           id?: string
           order_number: number
           order_type?: Database["public"]["Enums"]["order_type"]
@@ -316,6 +318,7 @@ export type Database = {
           created_at?: string
           customer_notes?: string | null
           discount_amount?: number
+          fired_manually?: boolean
           id?: string
           order_number?: number
           order_type?: Database["public"]["Enums"]["order_type"]

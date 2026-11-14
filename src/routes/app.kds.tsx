@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveTables } from "@/lib/realtime";
 import { settingsOf } from "@/lib/tenant";
-import { antiGhostOf } from "@/lib/antighost";
+import { antiGhostOf, canAutoFire } from "@/lib/antighost";
 import { RoleGate } from "@/components/tf/RoleGate";
 import { Button } from "@/components/ui/button";
 import type { Membership } from "@/lib/tenant";
@@ -46,10 +46,9 @@ function Kds({ m }: { m: Membership }) {
       return data.filter((o) => {
         if (o.order_type !== "eta_preorder") return true;
         if (o.status === "incoming") return false;
-        if (gpsHold) {
-          const r = o.reservations as { pre_order_paid_amount: number; is_proximity_verified: boolean } | null;
-          if (!r || r.pre_order_paid_amount <= 0 || !r.is_proximity_verified) return false;
-        }
+        if (o.fired_manually) return true;
+        const r = o.reservations as { pre_order_paid_amount: number; is_proximity_verified: boolean } | null;
+        if (!r || !canAutoFire({ paid: r.pre_order_paid_amount > 0, verified: r.is_proximity_verified, hold: gpsHold, changedEta: false }, gpsHold)) return false;
         return true;
       });
     },
