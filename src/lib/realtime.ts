@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 /** Subscribe to row changes for one restaurant and refetch the given queries. */
 export function useLiveTables(
   restaurantId: string | undefined,
-  tables: ("tables" | "reservations" | "orders" | "order_items")[],
+  tables: ("tables" | "reservations" | "orders" | "order_items" | "menu_items")[],
   queryKeys: unknown[][],
 ) {
   const qc = useQueryClient();

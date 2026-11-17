@@ -38,3 +38,5 @@ use the editor.
 - Pre-order firing mode lives in `restaurants.settings_json.preorder_fire_mode`; approval sets `orders.scheduled_fire_at` via `computeFireAt` (`'infinity'` = held for manual FOH fire) and the KDS hides orders until that time.
 - The owner top-bar date filter is shared through `DateRangeContext` (`src/lib/date-range.ts`); owner pages read it instead of keeping their own range.
 - Pre-order kitchen fire: KDS shows an eta_preorder only if `orders.fired_manually` (FOH/owner manual fire) or `canAutoFire` in `src/lib/antighost.ts` passes; no-show counting/flagging is a DB trigger on reservations.
+- FOH transactional actions use staff-scoped database RPCs so menu pricing, table assignment, manual firing and bill closure are atomic; kitchen delay is stored on the restaurant for cross-device updates.
+- FOH/KDS share operations signals for ready alerts, menu availability and delay changes; all channels are mounted in effects and removed on unmount.

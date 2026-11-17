@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, CreditCard, MapPin, Minus, Plus, ShieldCheck, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useLiveTables } from "@/lib/realtime";
 import { money, settingsOf } from "@/lib/tenant";
 import { antiGhostOf, depositDue, distanceKm, RESTAURANT_COORDS } from "@/lib/antighost";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ function Guest() {
     },
   });
 
+  useLiveTables(q.data?.r.id, ["menu_items"], [["guest", restaurantSlug]]);
   if (q.isLoading) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading menu…</div>;
   if (!q.data) return <div className="grid min-h-screen place-items-center p-6 text-center">Restaurant not found.</div>;
   const { r } = q.data;

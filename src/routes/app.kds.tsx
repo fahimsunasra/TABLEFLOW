@@ -5,6 +5,7 @@ import { Ban, ChevronDown, ChevronUp, Clock, TriangleAlert, Users } from "lucide
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveTables } from "@/lib/realtime";
+import { useOperationsSignals } from "@/lib/foh";
 import { settingsOf } from "@/lib/tenant";
 import { antiGhostOf } from "@/lib/antighost";
 import { kdsVisible, SOURCE_TAG, STATION_TAG, STATIONS, timerTone } from "@/lib/kds";
@@ -17,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import type { Membership } from "@/lib/tenant";
 
 export const Route = createFileRoute("/app/kds")({
-  head: () => ({ meta: [{ title: "Kitchen Display — TABLEFLOW" }, { name: "description", content: "Live kitchen ticket board." }] }),
+  head: () => ({ meta: [{ title: "Kitchen Display — TABLEFLOW" }, { name: "description", content: "Live kitchen ticket board." }, { property: "og:title", content: "Kitchen Display — TABLEFLOW" }, { property: "og:description", content: "Live station tickets and kitchen service." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: () => (
     <div className="dark min-h-screen bg-background text-foreground">
       <RoleGate area="kds">{(m) => <Kds m={m} />}</RoleGate>
@@ -43,29 +44,36 @@ function Kds({ m }: { m: Membership }) {
   const qc = useQueryClient();
   const now = useNow();
   const [station, setStation] = useState<string>("all");
-  const [delay, setDelay] = useState(false);
   const [showServed, setShowServed] = useState(false);
   const [eightySix, setEightySix] = useState(false);
-  useEffect(() => { setDelay(localStorage.getItem(`kds-delay-${rid}`) === "1"); }, [rid]);
-  function toggleDelay() {
-    const v = !delay; setDelay(v); localStorage.setItem(`kds-delay-${rid}`, v ? "1" : "0");
-    toast(v ? "+5m global delay on — quote guests 5 minutes longer" : "Global delay cleared");
+  const [busy, setBusy] = useState(false);
+  useOperationsSignals(rid, "kds");
+  const config = useQuery({ queryKey: ["kds", rid, "config"], queryFn: async () => {
+    const { data, error } = await supabase.from("restaurants").select("*").eq("id", rid).single();
+    if (error) throw error; return data;
+  } });
+  const delay = !!config.data?.kitchen_delay_minutes;
+  async function toggleDelay() {
+    const { error } = await supabase.rpc("set_kitchen_delay", { _restaurant_id: rid, _minutes: delay ? 0 : 5 });
+    if (error) { toast.error(error.message); return; }
+    await qc.invalidateQueries({ queryKey: ["kds", rid] });
+    toast(delay ? "Global delay cleared" : "+5m global delay on — FOH notified");
   }
 
   const q = useQuery({
     queryKey: ["kds", rid],
     queryFn: async () => {
-      const since = new Date(Date.now() - 3 * 3600000).toISOString();
+      const since = new Date(Date.now() - 24 * 3600000).toISOString();
       const { data, error } = await supabase.from("orders")
         .select("*, tables(table_number, capacity), order_items(*), reservations(pre_order_paid_amount, is_proximity_verified, customer_name, party_size, dietary_notes)")
-        .eq("restaurant_id", rid).in("status", ["incoming", "accepted", "preparing", "ready", "served"]).gte("created_at", since)
-        .or(`scheduled_fire_at.is.null,scheduled_fire_at.lte.${new Date().toISOString()}`).order("created_at");
+        .eq("restaurant_id", rid).in("status", ["incoming", "accepted", "preparing", "ready", "served"])
+        .or(`status.neq.served,created_at.gte.${since}`).order("created_at");
       if (error) throw error;
       const gpsHold = antiGhostOf(settingsOf(m.restaurants)).gps_hold;
-      return data.filter((o) => kdsVisible({ ...o, reservations: o.reservations as never }, gpsHold));
+      return data.filter((o) => (o.fired_manually || !o.scheduled_fire_at || new Date(o.scheduled_fire_at).getTime() <= Date.now()) && kdsVisible(o, gpsHold));
     },
   });
-  useLiveTables(rid, ["orders", "order_items"], [["kds", rid]]);
+  useLiveTables(rid, ["tables", "reservations", "orders", "order_items"], [["kds", rid]]);
   useEffect(() => { const i = setInterval(() => qc.invalidateQueries({ queryKey: ["kds", rid] }), 30000); return () => clearInterval(i); }, [qc, rid]);
 
   const orders = useMemo(() => (q.data ?? [])
@@ -77,12 +85,18 @@ function Kds({ m }: { m: Membership }) {
   const load = Math.min(100, Math.round((activeItems / 30) * 100));
 
   async function move(id: string, status: string) {
-    const { error } = await supabase.from("orders").update({ status: status as never }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    if (status === "preparing" || status === "ready" || status === "served")
-      await supabase.from("order_items").update({ item_status: status as never }).eq("order_id", id);
-    if (status === "ready") toast.success("Bumped — front of house notified");
-    qc.invalidateQueries({ queryKey: ["kds", rid] });
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("orders").update({ status: status as never }).eq("restaurant_id", rid).eq("id", id);
+      if (error) throw error;
+      if (status === "preparing" || status === "ready" || status === "served") {
+        const { error: itemError } = await supabase.from("order_items").update({ item_status: status as never }).eq("restaurant_id", rid).eq("order_id", id);
+        if (itemError) throw itemError;
+      }
+      if (status === "ready") toast.success("Bumped — front of house notified");
+      await qc.invalidateQueries({ queryKey: ["kds", rid] });
+    } catch (e) { toast.error((e as { message?: string }).message ?? "Ticket update failed"); } finally { setBusy(false); }
   }
   async function toggleItem(id: string, done: boolean) {
     const { error } = await supabase.from("order_items").update({ item_status: done ? "ready" : "preparing" }).eq("id", id);
@@ -96,9 +110,9 @@ function Kds({ m }: { m: Membership }) {
         <div className="text-lg font-bold tracking-tight">KDS <span className="ml-1 font-normal text-muted-foreground">{m.restaurants.name}</span></div>
         <nav className="flex flex-wrap gap-1 rounded-lg bg-card p-1">
           {["all", ...STATIONS].map((s) => (
-            <button key={s} onClick={() => setStation(s)} className={`h-11 rounded-md px-4 text-base font-semibold ${station === s ? "bg-electric text-electric-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            <Button variant="ghost" key={s} onClick={() => setStation(s)} className={`h-12 rounded-md px-4 text-base font-semibold ${station === s ? "bg-electric text-electric-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {s === "all" ? "All Stations" : s}
-            </button>
+            </Button>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
@@ -112,7 +126,8 @@ function Kds({ m }: { m: Membership }) {
           {m.role !== "kitchen" && <Button asChild size="lg" variant="secondary"><Link to="/app/owner">Exit</Link></Button>}
         </div>
       </header>
-      {delay && <div className="bg-warning px-5 py-2 text-center text-base font-bold text-warning-foreground">Kitchen running +5 min behind — all quoted times extended</div>}
+      {delay && <div className="bg-warning px-5 py-2 text-center text-base font-bold text-warning-foreground">Kitchen running +5 min behind — FOH notified</div>}
+      {q.isError && <div className="p-4 text-destructive">Tickets could not load. <Button onClick={() => qc.invalidateQueries({ queryKey: ["kds", rid] })}>Retry</Button></div>}
 
       <div className="flex flex-1 gap-4 overflow-x-auto p-4">
         {COLS.map((c) => {
@@ -130,9 +145,9 @@ function Kds({ m }: { m: Membership }) {
       </div>
 
       <div className="border-t bg-navy">
-        <button onClick={() => setShowServed((v) => !v)} className="flex h-12 w-full items-center justify-center gap-2 text-base font-semibold">
+        <Button variant="ghost" onClick={() => setShowServed((v) => !v)} className="flex h-12 w-full items-center justify-center gap-2 text-base font-semibold">
           {showServed ? <ChevronDown /> : <ChevronUp />} Served ({served.length})
-        </button>
+        </Button>
         {showServed && (
           <div className="flex gap-3 overflow-x-auto px-4 pb-4">
             {served.map((o) => (
@@ -166,10 +181,10 @@ function Ticket({ o, now, delay, col, onMove, onItem }: {
   const alerts = [res?.dietary_notes, ...o.items.map((i) => i.special_instructions)].filter(Boolean) as string[];
   const guests = res?.party_size ?? table?.capacity;
   return (
-    <article className="overflow-hidden rounded-xl bg-card shadow-card">
-      <div className={`flex items-center justify-between px-4 py-3 ${head}`}>
-        <span className="tabular text-xl font-bold">#{o.order_number} • {table ? `Table ${table.table_number}` : "ETA Pre-Order"}</span>
-        <span className="tabular text-xl font-bold">{String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}</span>
+    <article className="overflow-hidden rounded-lg bg-card shadow-card">
+      <div className={`flex flex-wrap items-center justify-between gap-2 px-4 py-3 ${head}`}>
+        <span className="tabular text-lg font-bold">#{o.order_number} • {table ? `Table ${table.table_number}` : "ETA Pre-Order"}</span>
+        <span className="tabular text-lg font-bold">{String(Math.max(0,mins)).padStart(2, "0")}:{String(Math.max(0,secs)).padStart(2, "0")}</span>
       </div>
       <div className="flex items-center gap-2 px-4 pt-3 text-base">
         <span className="rounded bg-electric px-2 py-0.5 text-sm font-bold text-electric-foreground">{SOURCE_TAG[o.order_type] ?? o.order_type}</span>

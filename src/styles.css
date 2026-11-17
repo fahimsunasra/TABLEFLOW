@@ -141,3 +141,18 @@
 
 @keyframes tf-flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 @utility animate-flash { animation: tf-flash 1s ease-in-out infinite; }
+
+.foh-shell { display: grid; grid-template-columns: 80px minmax(0, 1fr); }
+.foh-rail { position: sticky; top: 0; height: 100dvh; }
+.foh-workspace { display: grid; grid-template-columns: minmax(0, 68fr) minmax(280px, 32fr); min-height: calc(100dvh - 160px); }
+.foh-floor { display: grid; grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); gap: 28px; align-content: start; padding: 12px; }
+.foh-table { width: 100%; min-width: 0; max-width: 180px; justify-self: center; }
+.foh-rectangle { max-width: 210px; }
+@media (max-width: 760px) {
+  .foh-workspace { grid-template-columns: minmax(0, 1fr); }
+  .foh-workspace > aside { border-left: 0; border-top: 1px solid var(--border); }
+  .foh-floor { gap: 18px; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); padding: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-flash, .animate-pulse { animation: none; }
+}

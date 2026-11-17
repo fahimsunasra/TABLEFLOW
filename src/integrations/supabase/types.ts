@@ -492,6 +492,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          kitchen_delay_minutes: number
           logo_url: string | null
           name: string
           service_charge_pct: number
@@ -506,6 +507,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          kitchen_delay_minutes?: number
           logo_url?: string | null
           name: string
           service_charge_pct?: number
@@ -520,6 +522,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          kitchen_delay_minutes?: number
           logo_url?: string | null
           name?: string
           service_charge_pct?: number
@@ -645,6 +648,29 @@ export type Database = {
         Args: { _full_name: string; _name: string; _slug: string }
         Returns: string
       }
+      foh_manual_order: {
+        Args: {
+          _items: Json
+          _notes: string
+          _restaurant_id: string
+          _table_id: string
+        }
+        Returns: number
+      }
+      foh_pay_bill: {
+        Args: { _restaurant_id: string; _table_id: string }
+        Returns: undefined
+      }
+      foh_reservation_action: {
+        Args: {
+          _fire: boolean
+          _reservation_id: string
+          _restaurant_id: string
+          _scheduled_fire_at?: string
+          _table_id: string
+        }
+        Returns: undefined
+      }
       get_public_restaurant: {
         Args: { _slug: string }
         Returns: {
@@ -697,6 +723,10 @@ export type Database = {
           _slug: string
         }
         Returns: Json
+      }
+      set_kitchen_delay: {
+        Args: { _minutes: number; _restaurant_id: string }
+        Returns: undefined
       }
     }
     Enums: {
